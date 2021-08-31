@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>933</width>
-    <height>653</height>
+    <width>959</width>
+    <height>655</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -226,6 +226,13 @@ QScrollBar::sub-line:horizontal {
             </item>
            </layout>
           </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox_resize_image_ui">
+            <property name="text">
+             <string>Автоподстройка изображения</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
@@ -272,23 +279,6 @@ QScrollBar::sub-line:horizontal {
            </property>
            <property name="text">
             <string>Удалить все теги</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QPushButton" name="pushButton_edit_tag_ui">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="text">
-            <string>Редактировать тег</string>
            </property>
           </widget>
          </item>

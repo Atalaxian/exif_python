@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Sergey\PycharmProjects\exif_python\ui_files\main_window.ui'
+# Form implementation generated from reading ui file 'C:\Users\Sergey\PycharmProjects\pyexif-GUI\ui_files\main_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(933, 653)
+        Form.resize(959, 655)
         Form.setStyleSheet("*{\n"
 "font-size: 12px;\n"
 "}\n"
@@ -145,6 +145,9 @@ class Ui_Form(object):
         self.radioButton_KeepAspectRatioByExpanding_ui.setObjectName("radioButton_KeepAspectRatioByExpanding_ui")
         self.horizontalLayout_2.addWidget(self.radioButton_KeepAspectRatioByExpanding_ui)
         self.verticalLayout_5.addLayout(self.horizontalLayout_2)
+        self.checkBox_resize_image_ui = QtWidgets.QCheckBox(self.frame_2)
+        self.checkBox_resize_image_ui.setObjectName("checkBox_resize_image_ui")
+        self.verticalLayout_5.addWidget(self.checkBox_resize_image_ui)
         self.horizontalLayout_4.addWidget(self.frame_2)
         self.verticalLayout.addLayout(self.horizontalLayout_4)
         self.horizontalLayout_5.addLayout(self.verticalLayout)
@@ -170,14 +173,6 @@ class Ui_Form(object):
         self.pushButton_remove_all_tag_ui.setObjectName("pushButton_remove_all_tag_ui")
         self.horizontalLayout_3.addWidget(self.pushButton_remove_all_tag_ui)
         self.verticalLayout_6.addLayout(self.horizontalLayout_3)
-        self.horizontalLayout_6 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_6.setObjectName("horizontalLayout_6")
-        self.pushButton_edit_tag_ui = QtWidgets.QPushButton(Form)
-        self.pushButton_edit_tag_ui.setEnabled(False)
-        self.pushButton_edit_tag_ui.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.pushButton_edit_tag_ui.setObjectName("pushButton_edit_tag_ui")
-        self.horizontalLayout_6.addWidget(self.pushButton_edit_tag_ui)
-        self.verticalLayout_6.addLayout(self.horizontalLayout_6)
         self.verticalLayout_3.addLayout(self.verticalLayout_6)
         self.horizontalLayout_5.addLayout(self.verticalLayout_3)
 
@@ -192,6 +187,6 @@ class Ui_Form(object):
         self.label.setText(_translate("Form", "Масштабирование"))
         self.radioButton_KeepAspectRatio_ui.setText(_translate("Form", "KeepAspectRatio"))
         self.radioButton_KeepAspectRatioByExpanding_ui.setText(_translate("Form", "KeepAspectRatioByExpanding"))
+        self.checkBox_resize_image_ui.setText(_translate("Form", "Автоподстройка изображения"))
         self.pushButton_remove_one_tag_ui.setText(_translate("Form", "Удалить тег"))
         self.pushButton_remove_all_tag_ui.setText(_translate("Form", "Удалить все теги"))
-        self.pushButton_edit_tag_ui.setText(_translate("Form", "Редактировать тег"))

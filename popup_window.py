@@ -48,16 +48,16 @@ class PopupWindow(QtWidgets.QWidget):
 
     def show(self):
         self.setWindowOpacity(0.0)
-        self.animation.setDuration(1500)
+        self.animation.setDuration(1000)
         self.animation.setStartValue(0.0)
         self.animation.setEndValue(1.0)
         QtWidgets.QWidget.show(self)
         self.animation.start()
-        self.timer.start(3000)
+        self.timer.start(2000)
 
     def hide_animation(self):
         self.timer.stop()
-        self.animation.setDuration(1500)
+        self.animation.setDuration(1000)
         self.animation.setStartValue(1.0)
         self.animation.setEndValue(0.0)
         self.animation.start()
