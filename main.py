@@ -1,23 +1,16 @@
-import math
-
 from PyQt5 import QtGui, Qt, QtCore, QtWidgets
-from PyQt5.QtWidgets import QWidget, QFileDialog, QApplication, QStyledItemDelegate
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from main_window import Ui_Form
-from popup_window import PopupWindow
+from PyQt5.QtWidgets import QWidget, QFileDialog, QApplication, QStyledItemDelegate, QStyleOptionViewItem
+from PyQt5.QtGui import QStandardItemModel
+from windows.main_window import Ui_Form
+from windows.popup_window import PopupWindow
 from typing import Union
-import enum
 import exif
 from plum.exceptions import UnpackError
+from matching_enum import MatchingEnum
+from json_module import JSON
 
 
 class Window(QWidget, Ui_Form):
-    dict_matching = {'orientation': exif.Orientation, 'resolution_unit': exif.ResolutionUnit,
-                     'exposure_program': exif.ExposureProgram, 'metering_mode': exif.MeteringMode,
-                     'color_space': exif.ColorSpace, 'exposure_mode': exif.ExposureMode,
-                     'white_balance': exif.WhiteBalance, 'scene_capture_type': exif.SceneCaptureType,
-                     'saturation': exif.Saturation, 'sharpness': exif.Sharpness,
-                     'gps_altitude_ref': exif.GpsAltitudeRef}
     resize_image = False
     mode = None
     file_path = None
@@ -38,9 +31,10 @@ class Window(QWidget, Ui_Form):
         self.pushButton_remove_all_tag_ui.clicked.connect(self.remove_all_tags)
         self.pushButton_save_image_with_new_meta_ui.clicked.connect(self.save_file_with_new_meta)
         self.pushButton_remove_one_tag_ui.clicked.connect(self.remove_one_tag)
+        self.pushButton_save_tags_ui.clicked.connect(self.save_tags)
         self.tableView_exif_ui.setModel(self.model)
         self.tableView_exif_ui.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.tableView_exif_ui.setItemDelegateForColumn(1, EditDelegate(self.image_exif))
+        self.tableView_exif_ui.setItemDelegateForColumn(1, EditDelegate())
         self.model.dataChanged.connect(self.model_changed)
 
     def model_changed(self, index: QtCore.QModelIndex) -> None:
@@ -58,12 +52,30 @@ class Window(QWidget, Ui_Form):
             str_value = str_value.replace(',', '')
             value = tuple([int(x) for x in str_value.split(' ')])
         else:
-            if tag not in self.dict_matching.keys():
+            if tag not in MatchingEnum.dict_matching.keys():
                 return
             value = str_value.split('.')[1]
-            value = self.dict_matching[tag][value]
+            value = MatchingEnum.dict_matching[tag][value]
         self.dict_tags[tag] = (value, type(value))
         self.image_exif.set(tag, value)
+
+    @QtCore.pyqtSlot()
+    def save_tags(self):
+        file_path = QFileDialog.getSaveFileName(self, "Выбрать файл", "",
+                                                "*.json;;")[0]
+        if file_path != '':
+            dict_tags = dict()
+            list_all = self.image_exif.list_all()
+            for elem in list_all:
+                try:
+                    value = self.image_exif.get(elem, None)
+                except ValueError:
+                    value = None
+                if value is not None and elem != 'flash':
+                    dict_tags[elem] = value
+            bytes_json = JSON.from_dict_to_json_byte(dict_tags)
+            with open(file_path, 'wb') as file:
+                file.write(bytes_json)
 
     @staticmethod
     def get_standard_item(value: str, readonly: bool = False) -> QtGui.QStandardItem:
@@ -84,7 +96,7 @@ class Window(QWidget, Ui_Form):
     @QtCore.pyqtSlot()
     def select_file(self) -> None:
         file_path = QFileDialog.getOpenFileName(self, "Выбрать изображение", "",
-                                                "*.jpg *.jpeg *.tiff")[0]
+                                                "*.jpg;; *.jpeg;; *.tiff")[0]
         if file_path != '':
             with open(file_path, 'rb') as image_file:
                 try:
@@ -172,6 +184,7 @@ class Window(QWidget, Ui_Form):
 
     def set_all_enabled(self) -> None:
         self.pushButton_save_image_with_new_meta_ui.setDisabled(False)
+        self.pushButton_save_tags_ui.setDisabled(False)
         self.pushButton_remove_all_tag_ui.setDisabled(False)
         self.pushButton_remove_one_tag_ui.setDisabled(False)
 
@@ -207,14 +220,7 @@ class Window(QWidget, Ui_Form):
 
 
 class EditDelegate(QStyledItemDelegate):
-    dict_matching = {'orientation': exif.Orientation, 'resolution_unit': exif.ResolutionUnit,
-                     'exposure_program': exif.ExposureProgram, 'metering_mode': exif.MeteringMode,
-                     'color_space': exif.ColorSpace, 'exposure_mode': exif.ExposureMode,
-                     'white_balance': exif.WhiteBalance, 'scene_capture_type': exif.SceneCaptureType,
-                     'saturation': exif.Saturation, 'sharpness': exif.Sharpness,
-                     'gps_altitude_ref': exif.GpsAltitudeRef}
-
-    def createEditor(self, parent: QWidget, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> QWidget:
+    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         data = index.data(Qt.Qt.UserRole + 1)
         if data == "<class 'int'>":
             widget = QtWidgets.QSpinBox(parent)
@@ -241,14 +247,14 @@ class EditDelegate(QStyledItemDelegate):
             editor.setText(index.data(Qt.Qt.EditRole))
         else:
             tag = index.siblingAtColumn(0).data(Qt.Qt.EditRole)
-            if tag in self.dict_matching.keys():
-                list_enum = dir(self.dict_matching[tag])
+            if tag in MatchingEnum.dict_matching.keys():
+                list_enum = dir(MatchingEnum.dict_matching[tag])
                 for x in [x for x in list_enum if x not in ['__class__', '__doc__', '__members__', '__module__']]:
                     editor.addItem(str(tag + '.' + x))
             else:
                 editor.addItem(data)
 
-    def updateEditorGeometry(self, editor: QWidget, option: 'QStyleOptionViewItem', index: QtCore.QModelIndex) -> None:
+    def updateEditorGeometry(self, editor: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         data = index.data(Qt.Qt.UserRole + 1)
         if data != "<class 'int'>" and data != "<class 'float'>" and data != "<class 'str'>" \
                 and data != "<class 'tuple'>":

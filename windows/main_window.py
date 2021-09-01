@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Sergey\PycharmProjects\pyexif-GUI\ui_files\main_window.ui'
+# Form implementation generated from reading ui file 'C:\Users\ase\PycharmProjects\pyexif-GUI\ui_files\main_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -173,6 +173,11 @@ class Ui_Form(object):
         self.pushButton_remove_all_tag_ui.setObjectName("pushButton_remove_all_tag_ui")
         self.horizontalLayout_3.addWidget(self.pushButton_remove_all_tag_ui)
         self.verticalLayout_6.addLayout(self.horizontalLayout_3)
+        self.pushButton_save_tags_ui = QtWidgets.QPushButton(Form)
+        self.pushButton_save_tags_ui.setEnabled(False)
+        self.pushButton_save_tags_ui.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.pushButton_save_tags_ui.setObjectName("pushButton_save_tags_ui")
+        self.verticalLayout_6.addWidget(self.pushButton_save_tags_ui)
         self.verticalLayout_3.addLayout(self.verticalLayout_6)
         self.horizontalLayout_5.addLayout(self.verticalLayout_3)
 
@@ -190,3 +195,4 @@ class Ui_Form(object):
         self.checkBox_resize_image_ui.setText(_translate("Form", "Автоподстройка изображения"))
         self.pushButton_remove_one_tag_ui.setText(_translate("Form", "Удалить тег"))
         self.pushButton_remove_all_tag_ui.setText(_translate("Form", "Удалить все теги"))
+        self.pushButton_save_tags_ui.setText(_translate("Form", "Сохранить теги"))
