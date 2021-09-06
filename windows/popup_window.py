@@ -7,7 +7,7 @@ class PopupWindow(QtWidgets.QWidget):
     vertical_layout = None
     drag_position = None
 
-    def __init__(self, text):
+    def __init__(self, text: str) -> None:
         super(PopupWindow, self).__init__()
         self.setWindowFlags(QtCore.Qt.SplashScreen | QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
 
@@ -19,7 +19,7 @@ class PopupWindow(QtWidgets.QWidget):
         self.setup_ui()
         self.set_popup_text(text)
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         self.vertical_layout = QtWidgets.QVBoxLayout(self)
         self.label = QtWidgets.QLabel(self)
         font = QtGui.QFont()
@@ -32,21 +32,21 @@ class PopupWindow(QtWidgets.QWidget):
                             QtGui.QColor('#55ffff'))
         self.setPalette(appearance)
 
-    def set_popup_text(self, text):
+    def set_popup_text(self, text: str) -> None:
         self.label.setText(text)
         self.label.adjustSize()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.button() == QtCore.Qt.LeftButton:
             self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.buttons() == QtCore.Qt.LeftButton:
             self.move(event.globalPos() - self.drag_position)
             event.accept()
 
-    def show(self):
+    def show(self) -> None:
         self.setWindowOpacity(0.0)
         self.animation.setDuration(1000)
         self.animation.setStartValue(0.0)
@@ -55,14 +55,14 @@ class PopupWindow(QtWidgets.QWidget):
         self.animation.start()
         self.timer.start(2000)
 
-    def hide_animation(self):
+    def hide_animation(self) -> None:
         self.timer.stop()
         self.animation.setDuration(1000)
         self.animation.setStartValue(1.0)
         self.animation.setEndValue(0.0)
         self.animation.start()
 
-    def hide(self):
+    def hide(self) -> None:
         if self.windowOpacity() == 0:
             QtWidgets.QWidget.hide(self)
             self.popuphidden.emit()
