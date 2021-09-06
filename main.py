@@ -6,8 +6,8 @@ from windows.popup_window import PopupWindow
 from typing import Union
 import exif
 from plum.exceptions import UnpackError
-from matching_enum import MatchingEnum
 from json_module import JSON
+from enum import Enum
 
 
 class Window(QWidget, Ui_Form):
@@ -17,7 +17,6 @@ class Window(QWidget, Ui_Form):
     image_exif = None
     aspect_ratio_mode = Qt.Qt.KeepAspectRatio
     model = QStandardItemModel()
-    dict_tags = dict()
     popup = None
 
     def __init__(self) -> None:
@@ -35,29 +34,31 @@ class Window(QWidget, Ui_Form):
         self.tableView_exif_ui.setModel(self.model)
         self.tableView_exif_ui.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         self.tableView_exif_ui.setItemDelegateForColumn(1, EditDelegate())
-        self.model.dataChanged.connect(self.model_changed)
 
     def model_changed(self, index: QtCore.QModelIndex) -> None:
         tag = index.siblingAtColumn(0).data(Qt.Qt.EditRole)
         str_value = index.data(Qt.Qt.EditRole)
-        if self.dict_tags[tag][1] == int:
+        metadata = index.data(Qt.Qt.UserRole + 1)
+        if metadata[1] == int:
             value = int(str_value)
-        elif self.dict_tags[tag][1] == float:
+        elif metadata[1] == float:
             value = float(str_value)
-        elif self.dict_tags[tag][1] == str:
+        elif metadata[1] == str:
             value = str_value
-        elif self.dict_tags[tag][1] == tuple:
+        elif metadata[1] == tuple:
             str_value = str_value.replace('(', '')
             str_value = str_value.replace(')', '')
             str_value = str_value.replace(',', '')
-            value = tuple([int(x) for x in str_value.split(' ')])
+            value = tuple([float(x) for x in str_value.split(' ')])
         else:
-            if tag not in MatchingEnum.dict_matching.keys():
-                return
-            value = str_value.split('.')[1]
-            value = MatchingEnum.dict_matching[tag][value]
-        self.dict_tags[tag] = (value, type(value))
-        self.image_exif.set(tag, value)
+            value = getattr(metadata[1], str_value)
+        try:
+            self.image_exif.set(tag, value)
+        except ValueError:
+            prev_value = index.data(Qt.Qt.UserRole + 2)
+            self.model.setData(index, prev_value, Qt.Qt.EditRole)
+            self.popup = PopupWindow('Возникла ошибка при упаковке данных')
+            self.popup.show()
 
     @QtCore.pyqtSlot()
     def save_tags(self):
@@ -114,20 +115,23 @@ class Window(QWidget, Ui_Form):
                     self.image_exif = exif_data
                     self.model.clear()
                     self.model.setHorizontalHeaderLabels(['Название', 'Значение'])
-                    self._fill_dict()
                     self._fill_table()
             self.set_all_enabled()
             self.set_image(rotate=self._get_rotate())
 
     def _fill_table(self) -> None:
-        for key, value in self.dict_tags.items():
+        for key, value in self._get_dict().items():
             item_0 = self.get_standard_item(key, readonly=True)
-            item_1 = self.get_standard_item(str(value[0]))
-            item_1.setData(str(self.dict_tags[key][1]), Qt.Qt.UserRole + 1)
+            if len(value) == 2:
+                item_1 = self.get_standard_item(str(value[0]), readonly=True)
+            else:
+                item_1 = self.get_standard_item(str(value[0]))
+            item_1.setData(value, Qt.Qt.UserRole + 1)
+            item_1.setData(self.model_changed, Qt.Qt.UserRole + 5)
             self.model.insertRow(self.model.rowCount(), [item_0, item_1])
 
-    def _fill_dict(self) -> None:
-        self.dict_tags.clear()
+    def _get_dict(self) -> dict:
+        dict_tags = dict()
         list_all = self.image_exif.list_all()
         for elem in list_all:
             try:
@@ -135,7 +139,15 @@ class Window(QWidget, Ui_Form):
             except ValueError:
                 value = None
             if value is not None:
-                self.dict_tags[elem] = (value, type(value))
+                if isinstance(value, Enum):
+                    list_attr = [x for x in dir(value.__class__) if not x.startswith('_')]
+                    dict_tags[elem] = (value.name, value.__class__, list_attr)
+                else:
+                    if not isinstance(value, (int, float, str, tuple)):
+                        dict_tags[elem] = (value, type(value))
+                    else:
+                        dict_tags[elem] = (value, type(value), None)
+        return dict_tags
 
     def _get_rotate(self) -> Union[None, int]:
         if self.image_exif is None:
@@ -159,7 +171,6 @@ class Window(QWidget, Ui_Form):
     def remove_all_tags(self) -> None:
         self.image_exif.delete_all()
         self.model.clear()
-        self.dict_tags.clear()
 
     @QtCore.pyqtSlot()
     def remove_one_tag(self) -> None:
@@ -170,7 +181,6 @@ class Window(QWidget, Ui_Form):
             return
         row = selected_indexes[0].row()
         self.image_exif.delete(self.model.item(row, 0).text())
-        del self.dict_tags[self.model.item(row, 0).text()]
         self.model.removeRow(row)
 
     @QtCore.pyqtSlot()
@@ -222,56 +232,53 @@ class Window(QWidget, Ui_Form):
 class EditDelegate(QStyledItemDelegate):
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> QWidget:
         data = index.data(Qt.Qt.UserRole + 1)
-        if data == "<class 'int'>":
+        if data[1] == int:
             widget = QtWidgets.QSpinBox(parent)
             widget.setMaximum(2147483647)
             widget.setMinimum(- 2147483648)
             return widget
-        elif data == "<class 'float'>":
+        elif data[1] == float:
             widget = QtWidgets.QDoubleSpinBox(parent)
             widget.setMaximum(2147483647)
             widget.setMinimum(- 2147483648)
             return widget
-        elif data == "<class 'str'>" or data == "<class 'tuple'>":
+        elif data[1] == str or data[1] == tuple:
             return QtWidgets.QLineEdit(parent)
         else:
             return QtWidgets.QComboBox(parent)
 
     def setEditorData(self, editor: QWidget, index: QtCore.QModelIndex) -> None:
         data = index.data(Qt.Qt.UserRole + 1)
-        if data == "<class 'int'>":
+        if data[1] == int:
             editor.setValue(int(index.data(Qt.Qt.EditRole)))
-        elif data == "<class 'float'>":
+        elif data[1] == float:
             editor.setValue(float(index.data(Qt.Qt.EditRole)))
-        elif data == "<class 'str'>" or data == "<class 'tuple'>":
-            editor.setText(index.data(Qt.Qt.EditRole))
-        else:
-            tag = index.siblingAtColumn(0).data(Qt.Qt.EditRole)
-            if tag in MatchingEnum.dict_matching.keys():
-                list_enum = dir(MatchingEnum.dict_matching[tag])
-                for x in [x for x in list_enum if x not in ['__class__', '__doc__', '__members__', '__module__']]:
-                    editor.addItem(str(tag + '.' + x))
-            else:
-                editor.addItem(data)
+        elif data[1] == str or data[1] == tuple:
+            editor.setText(str(index.data(Qt.Qt.EditRole)))
+        elif issubclass(data[1], Enum):
+            for elem in data[2]:
+                editor.addItem(elem)
 
     def updateEditorGeometry(self, editor: QWidget, option: QStyleOptionViewItem, index: QtCore.QModelIndex) -> None:
         data = index.data(Qt.Qt.UserRole + 1)
-        if data != "<class 'int'>" and data != "<class 'float'>" and data != "<class 'str'>" \
-                and data != "<class 'tuple'>":
+        if issubclass(data[1], Enum):
             option.rect.setHeight(22)
         editor.setGeometry(option.rect)
 
     def setModelData(self, editor: QWidget, model: QtCore.QAbstractItemModel, index: QtCore.QModelIndex) -> None:
         data = index.data(Qt.Qt.UserRole + 1)
-        if data == "<class 'int'>":
+        if data[1] == int or data[1] == float:
             value = editor.value()
-        elif data == "<class 'float'>":
-            value = editor.value()
-        elif data == "<class 'str'>" or data == "<class 'tuple'>":
+        elif data[1] == str or data[1] == tuple:
             value = editor.text()
-        else:
+        elif issubclass(data[1], Enum):
             value = editor.currentData(Qt.Qt.EditRole)
+        else:
+            value = 0
+        model.setData(index, index.data(Qt.Qt.EditRole), Qt.Qt.UserRole + 2)
         model.setData(index, value, Qt.Qt.EditRole)
+        funk = index.data(Qt.Qt.UserRole + 5)
+        funk(index)
 
 
 if __name__ == '__main__':
